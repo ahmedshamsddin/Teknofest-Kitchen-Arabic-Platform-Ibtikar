@@ -13,7 +13,7 @@ from schemas import (
     ProjectFieldEnum, RegistrationTypeEnum
 )
 
-router = APIRouter(prefix="/api/students", tags=["الطلاب"])
+router = APIRouter(prefix="/api/students", tags=["المشاركون"])
 
 
 def get_active_program_version(db: Session):

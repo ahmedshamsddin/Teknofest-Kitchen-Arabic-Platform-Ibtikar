@@ -22,20 +22,24 @@ class RegistrationType(enum.Enum):
 
 
 class ProjectField(enum.Enum):
-    """مجالات المشاريع"""
-    AI = "الذكاء الاصطناعي"
-    ROBOTICS = "الروبوتات"
-    IOT = "إنترنت الأشياء"
-    MOBILE_APPS = "تطبيقات الجوال"
-    WEB_DEVELOPMENT = "تطوير الويب"
-    CYBERSECURITY = "الأمن السيبراني"
-    GAME_DEVELOPMENT = "تطوير الألعاب"
-    DATA_SCIENCE = "علم البيانات"
-    GREEN_TECH = "التقنية الخضراء"
-    HEALTH_TECH = "التقنية الصحية"
-    EDUCATION_TECH = "تقنية التعليم"
-    FINTECH = "التقنية المالية"
-    OTHER = "أخرى"
+    """مسابقات تكنوفست"""
+    SMART_MOBILITY = "مسابقة التنقل الذكي"
+    BIOTECHNOLOGY = "مسابقة ابتكار التكنولوجيا الحيوية"
+    ENVIRONMENT_ENERGY = "مسابقة تقنيات البيئة والطاقة"
+    EDUCATION_TECH = "مسابقة تقنيات التعليم"
+    BARRIER_FREE_LIVING = "مسابقة تقنيات المعيشة الخالية من العوائق"
+    FINTECH = "مسابقة أفكار التكنولوجيا المالية"
+    TECH_FOR_HUMANITY = "مسابقة التكنولوجيا لصالح البشرية"
+    PSYCHOLOGY_TECH = "مسابقة تطبيقات التكنولوجيا في علم النفس"
+    AI_HEALTHCARE = "مسابقة الذكاء الاصطناعي في الصحة"
+    INDUSTRIAL_DIGITAL = "مسابقة التقنيات الصناعية"
+    AGRICULTURAL_TECH = "مسابقة التكنولوجيا الزراعية"
+    TRAVEL_HACKATHON = "مسابقة هاكاثون السفر"
+    TOURISM_TECH = "مسابقة تقنيات السياحة"
+    TURKISH_NLP = "مسابقة معالجة اللغة التركية"
+    AI_TRANSPORTATION = "مسابقة الذكاء الاصطناعي في النقل"
+    LLM_APPLICATIONS = "مسابقة تطبيقات نماذج اللغة الضخمة"
+    AIR_DEFENSE = "مسابقة تقنيات أنظمة الدفاع الجويّة"
 
 
 # ================== نموذج نسخة البرنامج ==================
