@@ -11,7 +11,7 @@ import {
   Check,
   Lightbulb,
 } from 'lucide-react'
-import { PROJECT_FIELDS, type Team, type TeamMember, type RegistrationType } from '../types'
+import { PROJECT_FIELDS, type TeamMember, type RegistrationType } from '../types'
 import { teamsService } from '../services/api'
 
 interface TeamFormData {
@@ -27,12 +27,12 @@ export default function TeamRegistration() {
   const [step, setStep] = useState(1)
   const [hasIdea, setHasIdea] = useState<boolean | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [leaderIndex, setLeaderIndex] = useState(0) // Track leader by index
 
   const {
     register,
     handleSubmit,
     control,
-    watch,
     formState: { errors },
   } = useForm<TeamFormData>({
     defaultValues: {
@@ -49,16 +49,25 @@ export default function TeamRegistration() {
     name: 'members',
   })
 
-  const watchMembers = watch('members')
-
   const onSubmit = async (data: TeamFormData) => {
     setIsSubmitting(true)
     try {
-      const teamData: Omit<Team, 'id'> = {
-        ...data,
+      // Transform members to ensure is_leader is properly set
+      const membersWithLeader = data.members.map((member, index) => ({
+        full_name: member.full_name,
+        email: member.email,
+        phone: member.phone,
+        is_leader: index === leaderIndex,
+      }))
+
+      const teamData = {
+        team_name: data.team_name,
         registration_type: hasIdea ? 'team_with_idea' : 'team_no_idea',
+        field: data.field,
+        initial_idea: hasIdea ? data.initial_idea : null,
+        members: membersWithLeader,
       }
-      await teamsService.create(teamData)
+      await teamsService.create(teamData as any)
       toast.success('تم تسجيل الفريق بنجاح!')
       navigate('/')
     } catch (error: any) {
@@ -74,11 +83,14 @@ export default function TeamRegistration() {
     }
   }
 
-  const setLeader = (index: number) => {
-    fields.forEach((_, i) => {
-      const input = document.querySelector(`input[name="members.${i}.is_leader"]`) as HTMLInputElement
-      if (input) input.checked = i === index
-    })
+  const handleRemoveMember = (index: number) => {
+    remove(index)
+    // Adjust leader index if needed
+    if (leaderIndex === index) {
+      setLeaderIndex(0) // Reset to first member
+    } else if (leaderIndex > index) {
+      setLeaderIndex(leaderIndex - 1) // Shift leader index
+    }
   }
 
   return (
@@ -270,16 +282,16 @@ export default function TeamRegistration() {
                           {index + 1}
                         </span>
                         <span className="text-white font-medium">
-                          {watchMembers[index]?.is_leader ? 'مشرف الفريق' : `عضو ${index + 1}`}
+                          {`عضو ${index + 1}`}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="radio"
-                            {...register(`members.${index}.is_leader`)}
-                            value="true"
-                            onChange={() => setLeader(index)}
+                            name="team_leader"
+                            checked={leaderIndex === index}
+                            onChange={() => setLeaderIndex(index)}
                             className="accent-teknofest-orange"
                           />
                           <span className="text-sm text-gray-300">مشرف</span>
@@ -287,7 +299,7 @@ export default function TeamRegistration() {
                         {fields.length > 3 && (
                           <button
                             type="button"
-                            onClick={() => remove(index)}
+                            onClick={() => handleRemoveMember(index)}
                             className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />

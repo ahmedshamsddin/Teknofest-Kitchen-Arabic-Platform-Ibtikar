@@ -145,14 +145,14 @@ class IndividualResponse(BaseModel):
 # ================== مخططات المشروع ==================
 
 class ProjectSubmissionCreate(BaseModel):
-    """إنشاء تقديم مشروع"""
-    team_id: int
+    """إنشاء تقديم مشروع - باستخدام البريد الإلكتروني للعثور على الفريق"""
+    member_email: EmailStr  # البريد الإلكتروني لعضو الفريق
     title: str = Field(..., min_length=5, max_length=200)
     problem_statement: str = Field(..., min_length=50)
     technical_description: str = Field(..., min_length=1000)  # 1000 حرف على الأقل
     scientific_reference: str = Field(..., min_length=10)
     field: ProjectFieldEnum
-    
+
     @validator('technical_description')
     def validate_description(cls, v):
         if len(v) < 1000:

@@ -11,16 +11,16 @@ import {
   Check,
   AlertCircle,
 } from 'lucide-react'
-import { PROJECT_FIELDS, type ProjectSubmission as ProjectType } from '../types'
+import { PROJECT_FIELDS, type ProjectField } from '../types'
 import { projectsService } from '../services/api'
 
 interface ProjectFormData {
-  team_id: number
+  member_email: string
   title: string
   problem_statement: string
   technical_description: string
   scientific_reference: string
-  field: string
+  field: ProjectField
 }
 
 export default function ProjectSubmission() {
@@ -56,12 +56,14 @@ export default function ProjectSubmission() {
     setIsSubmitting(true)
     try {
       // Submit project
-      const projectData: Omit<ProjectType, 'id'> = {
-        ...data,
-        team_id: Number(data.team_id),
-        field: data.field as any,
-      }
-      const project = await projectsService.submit(projectData)
+      const project = await projectsService.submit({
+        member_email: data.member_email,
+        title: data.title,
+        problem_statement: data.problem_statement,
+        technical_description: data.technical_description,
+        scientific_reference: data.scientific_reference,
+        field: data.field,
+      })
 
       // Upload attachments if any
       if (attachments.image || attachments.diagram || attachments.design) {
@@ -91,7 +93,7 @@ export default function ProjectSubmission() {
             <FileText className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">تقديم المشروع</h1>
-          <p className="text-gray-400">قدّم مشروعك مع الوصف التقني الكامل</p>
+          <p className="text-gray-400">قدّم مشروع المجموعة مع الوصف التقني الكامل</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
@@ -103,20 +105,27 @@ export default function ProjectSubmission() {
             </h2>
 
             <div className="space-y-6">
-              {/* Team ID */}
+              {/* Member Email */}
               <div>
-                <label className="block text-white font-medium mb-2">رقم الفريق *</label>
+                <label className="block text-white font-medium mb-2">البريد الإلكتروني *</label>
+                <p className="text-gray-400 text-sm mb-2">
+                  أدخل البريد الإلكتروني المستخدم عند التسجيل 
+                </p>
                 <input
-                  {...register('team_id', {
-                    required: 'رقم الفريق مطلوب',
-                    min: { value: 1, message: 'رقم غير صالح' },
+                  {...register('member_email', {
+                    required: 'البريد الإلكتروني مطلوب',
+                    pattern: {
+                      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                      message: 'بريد إلكتروني غير صالح',
+                    },
                   })}
-                  type="number"
+                  type="email"
                   className="input-field"
-                  placeholder="أدخل رقم فريقك"
+                  placeholder="example@email.com"
+                  dir="ltr"
                 />
-                {errors.team_id && (
-                  <p className="text-red-400 text-sm mt-1">{errors.team_id.message}</p>
+                {errors.member_email && (
+                  <p className="text-red-400 text-sm mt-1">{errors.member_email.message}</p>
                 )}
               </div>
 
@@ -242,8 +251,11 @@ export default function ProjectSubmission() {
               <Upload className="w-5 h-5 text-green-400" />
               المرفقات
             </h2>
-            <p className="text-gray-400 text-sm mb-6">
+            <p className="text-gray-400 text-sm mb-2">
               إضافة المرفقات اختيارية ولكنها تمنحك نقاط إضافية
+            </p>
+            <p className="text-gray-500 text-xs mb-6">
+              الأنواع المسموحة: PNG, JPG, JPEG, PDF, ZIP
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -254,7 +266,7 @@ export default function ProjectSubmission() {
                   <h3 className="text-white font-medium mb-2">صورة المشروع</h3>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept=".png,.jpg,.jpeg,.pdf,.zip"
                     onChange={(e) => handleFileChange('image', e.target.files?.[0] || null)}
                     className="hidden"
                     id="image-upload"
@@ -263,7 +275,7 @@ export default function ProjectSubmission() {
                     htmlFor="image-upload"
                     className="cursor-pointer text-teknofest-orange hover:text-teknofest-orange-hover text-sm"
                   >
-                    {attachments.image ? attachments.image.name : 'اختر صورة'}
+                    {attachments.image ? attachments.image.name : 'اختر ملف'}
                   </label>
                 </div>
               </div>
@@ -275,7 +287,7 @@ export default function ProjectSubmission() {
                   <h3 className="text-white font-medium mb-2">المخطط</h3>
                   <input
                     type="file"
-                    accept="image/*,.pdf"
+                    accept=".png,.jpg,.jpeg,.pdf,.zip"
                     onChange={(e) => handleFileChange('diagram', e.target.files?.[0] || null)}
                     className="hidden"
                     id="diagram-upload"
@@ -284,7 +296,7 @@ export default function ProjectSubmission() {
                     htmlFor="diagram-upload"
                     className="cursor-pointer text-teknofest-orange hover:text-teknofest-orange-hover text-sm"
                   >
-                    {attachments.diagram ? attachments.diagram.name : 'اختر مخطط'}
+                    {attachments.diagram ? attachments.diagram.name : 'اختر ملف'}
                   </label>
                 </div>
               </div>
@@ -296,7 +308,7 @@ export default function ProjectSubmission() {
                   <h3 className="text-white font-medium mb-2">التصميم المبدئي</h3>
                   <input
                     type="file"
-                    accept="image/*,.pdf"
+                    accept=".png,.jpg,.jpeg,.pdf,.zip"
                     onChange={(e) => handleFileChange('design', e.target.files?.[0] || null)}
                     className="hidden"
                     id="design-upload"
@@ -305,7 +317,7 @@ export default function ProjectSubmission() {
                     htmlFor="design-upload"
                     className="cursor-pointer text-teknofest-orange hover:text-teknofest-orange-hover text-sm"
                   >
-                    {attachments.design ? attachments.design.name : 'اختر تصميم'}
+                    {attachments.design ? attachments.design.name : 'اختر ملف'}
                   </label>
                 </div>
               </div>

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional
 from database import get_db
-from models import ProjectSubmission, Team, ProgramVersion, Evaluation
+from models import ProjectSubmission, Team, TeamMember, ProgramVersion, Evaluation
 from schemas import (
     ProjectSubmissionCreate, ProjectSubmissionResponse, 
     ProjectWithTeamResponse, ProjectFieldEnum
@@ -39,11 +39,23 @@ async def submit_project(
 ):
     """
     تقديم مشروع جديد (استبيان المشروع)
+    - يتم البحث عن الفريق باستخدام البريد الإلكتروني لأحد الأعضاء
     - يجب ألا يقل الوصف التقني عن 1000 حرف
     - يجب وجود مرجع علمي واحد على الأقل
     """
-    # التحقق من وجود الفريق
-    team = db.query(Team).filter(Team.id == project_data.team_id).first()
+    # البحث عن عضو الفريق بالبريد الإلكتروني
+    team_member = db.query(TeamMember).filter(
+        TeamMember.email == project_data.member_email
+    ).first()
+
+    if not team_member:
+        raise HTTPException(
+            status_code=404,
+            detail="البريد الإلكتروني غير مسجل لعضو في فريق. تأكد من استخدام نفس البريد المستخدم عند التسجيل "
+        )
+
+    # الحصول على الفريق من خلال العضو
+    team = db.query(Team).filter(Team.id == team_member.team_id).first()
     if not team:
         raise HTTPException(status_code=404, detail="الفريق غير موجود")
     
@@ -88,7 +100,7 @@ async def submit_project(
 
 @router.post("/submit-with-files", response_model=ProjectSubmissionResponse)
 async def submit_project_with_files(
-    team_id: int = Form(...),
+    member_email: str = Form(...),
     title: str = Form(...),
     problem_statement: str = Form(...),
     technical_description: str = Form(...),
@@ -101,14 +113,28 @@ async def submit_project_with_files(
 ):
     """
     تقديم مشروع مع ملفات مرفقة
+    - يتم البحث عن الفريق باستخدام البريد الإلكتروني
     - صورة (اختياري) - نقاط إضافية
     - مخطط (اختياري) - نقاط إضافية
     - تصميم مبدئي (اختياري) - نقاط إضافية
     """
-    # التحقق من وجود الفريق
-    team = db.query(Team).filter(Team.id == team_id).first()
+    # البحث عن عضو الفريق بالبريد الإلكتروني
+    team_member = db.query(TeamMember).filter(
+        TeamMember.email == member_email
+    ).first()
+
+    if not team_member:
+        raise HTTPException(
+            status_code=404,
+            detail="البريد الإلكتروني غير مسجل. تأكد من استخدام نفس البريد المستخدم عند التسجيل "
+        )
+
+    # الحصول على الفريق
+    team = db.query(Team).filter(Team.id == team_member.team_id).first()
     if not team:
         raise HTTPException(status_code=404, detail="الفريق غير موجود")
+
+    team_id = team.id
     
     # التحقق من طول الوصف
     if len(technical_description) < 1000:
@@ -179,6 +205,82 @@ async def submit_project_with_files(
     db.refresh(submission)
     
     return submission
+
+
+# الأنواع المسموح بها للملفات
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf', 'zip'}
+
+
+def validate_file_extension(filename: str) -> bool:
+    """التحقق من امتداد الملف"""
+    if '.' not in filename:
+        return False
+    ext = filename.rsplit('.', 1)[1].lower()
+    return ext in ALLOWED_EXTENSIONS
+
+
+@router.post("/{project_id}/attachments", response_model=ProjectSubmissionResponse)
+async def upload_attachments(
+    project_id: int,
+    image: Optional[UploadFile] = File(None),
+    diagram: Optional[UploadFile] = File(None),
+    design: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db)
+):
+    """
+    رفع مرفقات لمشروع موجود
+    - الأنواع المسموح بها: png, jpg, jpeg, pdf, zip
+    - صورة المشروع (اختياري)
+    - المخطط (اختياري)
+    - التصميم المبدئي (اختياري)
+    """
+    # التحقق من وجود المشروع
+    project = db.query(ProjectSubmission).filter(
+        ProjectSubmission.id == project_id
+    ).first()
+
+    if not project:
+        raise HTTPException(status_code=404, detail="المشروع غير موجود")
+
+    # التحقق من امتدادات الملفات
+    for file, name in [(image, "الصورة"), (diagram, "المخطط"), (design, "التصميم")]:
+        if file and not validate_file_extension(file.filename):
+            raise HTTPException(
+                status_code=400,
+                detail=f"{name}: نوع الملف غير مسموح. الأنواع المسموحة: png, jpg, jpeg, pdf, zip"
+            )
+
+    async def save_file(file: UploadFile, prefix: str) -> str:
+        ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'png'
+        filename = f"{prefix}_{project.team_id}_{uuid.uuid4().hex[:8]}.{ext}"
+        filepath = os.path.join(UPLOAD_DIR, filename)
+
+        content = await file.read()
+        with open(filepath, 'wb') as f:
+            f.write(content)
+
+        return filename
+
+    has_attachments = False
+
+    if image:
+        project.image_path = await save_file(image, "image")
+        has_attachments = True
+
+    if diagram:
+        project.diagram_path = await save_file(diagram, "diagram")
+        has_attachments = True
+
+    if design:
+        project.design_path = await save_file(design, "design")
+        has_attachments = True
+
+    if has_attachments:
+        project.has_attachments = True
+        db.commit()
+        db.refresh(project)
+
+    return project
 
 
 @router.get("/", response_model=List[ProjectSubmissionResponse])

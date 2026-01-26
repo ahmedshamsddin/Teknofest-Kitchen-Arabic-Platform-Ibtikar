@@ -1,5 +1,5 @@
 """
-خدمة التقييم بالذكاء الاصطناعي
+خدمة التقييم بالذكاء الاصطناعي - DeepSeek API
 """
 import os
 import json
@@ -8,15 +8,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# مفتاح OpenAI API
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+# مفتاح DeepSeek API
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 
 
 class AIEvaluationService:
-    """خدمة تقييم المشاريع بالذكاء الاصطناعي"""
-    
+    """خدمة تقييم المشاريع بالذكاء الاصطناعي - DeepSeek"""
+
     def __init__(self):
-        self.api_key = OPENAI_API_KEY
+        self.api_key = DEEPSEEK_API_KEY
+        self.base_url = DEEPSEEK_BASE_URL
         self.max_score = 50  # الحد الأقصى للنقاط
     
     def create_evaluation_prompt(
@@ -82,12 +84,16 @@ class AIEvaluationService:
         # إذا لم يكن هناك مفتاح API، نستخدم تقييم تجريبي
         if not self.api_key:
             return self._mock_evaluation(title, technical_description)
-        
+
         try:
             import openai
-            
-            client = openai.OpenAI(api_key=self.api_key)
-            
+
+            # استخدام DeepSeek API (متوافق مع OpenAI)
+            client = openai.OpenAI(
+                api_key=self.api_key,
+                base_url=self.base_url
+            )
+
             prompt = self.create_evaluation_prompt(
                 title=title,
                 problem_statement=problem_statement,
@@ -95,9 +101,9 @@ class AIEvaluationService:
                 scientific_reference=scientific_reference,
                 field=field
             )
-            
+
             response = client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="deepseek-chat",  # نموذج DeepSeek
                 messages=[
                     {
                         "role": "system",

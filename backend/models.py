@@ -87,11 +87,11 @@ class Admin(Base):
 class Team(Base):
     """الفرق - سيناريو 1 و 4"""
     __tablename__ = "teams"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     team_name = Column(String(100), nullable=False)
     registration_type = Column(Enum(RegistrationType), nullable=False)
-    field = Column(Enum(ProjectField), nullable=False)  # المجال المختار
+    field = Column(String(100), nullable=False)  # المجال المختار - استخدام String بدلاً من Enum
     
     # معلومات فكرة المشروع (للفرق التي لديها فكرة)
     initial_idea = Column(Text)  # وصف أولي للفكرة
@@ -150,7 +150,7 @@ class Individual(Base):
     experience_level = Column(String(50))  # مستوى الخبرة
     
     # المجال المرغوب
-    preferred_field = Column(Enum(ProjectField), nullable=False)
+    preferred_field = Column(String(100), nullable=False)  # استخدام String بدلاً من Enum
     
     # وصف فكرة المشروع (للأفراد الذين لديهم فكرة - سيناريو 2)
     project_idea = Column(Text)
@@ -188,7 +188,7 @@ class ProjectSubmission(Base):
     scientific_reference = Column(Text, nullable=False)  # المرجع العلمي
     
     # المجال
-    field = Column(Enum(ProjectField), nullable=False)
+    field = Column(String(100), nullable=False)  # استخدام String بدلاً من Enum
     
     # الملفات المرفقة
     image_path = Column(String(255))  # مسار الصورة

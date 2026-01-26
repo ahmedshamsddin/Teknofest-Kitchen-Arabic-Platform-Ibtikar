@@ -43,8 +43,7 @@ technofest-platform/
 ### الخطوة 1: إعداد قاعدة البيانات PostgreSQL
 
 ```bash
-# على Replit، استخدم قاعدة بيانات Neon أو Supabase المجانية
-# أو محلياً:
+
 createdb technofest_db
 ```
 

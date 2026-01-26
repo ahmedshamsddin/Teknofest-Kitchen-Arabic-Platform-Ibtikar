@@ -3,6 +3,7 @@ import type {
   Team,
   Individual,
   ProjectSubmission,
+  ProjectSubmissionCreate,
   Evaluation,
   LoginCredentials,
   AuthToken,
@@ -64,7 +65,7 @@ export const authService = {
 
 export const teamsService = {
   create: async (team: Omit<Team, 'id'>): Promise<Team> => {
-    const response = await api.post('/students/teams', team)
+    const response = await api.post('/students/team', team)
     return response.data
   },
 
@@ -74,21 +75,21 @@ export const teamsService = {
   },
 
   getById: async (id: number): Promise<Team> => {
-    const response = await api.get(`/students/teams/${id}`)
+    const response = await api.get(`/students/team/${id}`)
     return response.data
   },
 
   update: async (id: number, team: Partial<Team>): Promise<Team> => {
-    const response = await api.put(`/students/teams/${id}`, team)
+    const response = await api.put(`/students/team/${id}`, team)
     return response.data
   },
 
   delete: async (id: number): Promise<void> => {
-    await api.delete(`/students/teams/${id}`)
+    await api.delete(`/students/team/${id}`)
   },
 
   sendTelegramLink: async (teamId: number, telegramLink: string): Promise<void> => {
-    await api.post(`/students/teams/${teamId}/telegram`, { telegram_link: telegramLink })
+    await api.post(`/students/team/${teamId}/telegram`, { telegram_link: telegramLink })
   },
 }
 
@@ -96,7 +97,7 @@ export const teamsService = {
 
 export const individualsService = {
   create: async (individual: Omit<Individual, 'id'>): Promise<Individual> => {
-    const response = await api.post('/students/individuals', individual)
+    const response = await api.post('/students/individual', individual)
     return response.data
   },
 
@@ -106,12 +107,12 @@ export const individualsService = {
   },
 
   getById: async (id: number): Promise<Individual> => {
-    const response = await api.get(`/students/individuals/${id}`)
+    const response = await api.get(`/students/individual/${id}`)
     return response.data
   },
 
   getUnassigned: async (): Promise<Individual[]> => {
-    const response = await api.get('/students/individuals/unassigned')
+    const response = await api.get('/students/individuals?unassigned_only=true')
     return response.data
   },
 
@@ -128,7 +129,7 @@ export const individualsService = {
 // ==================== Projects ====================
 
 export const projectsService = {
-  submit: async (project: Omit<ProjectSubmission, 'id'>): Promise<ProjectSubmission> => {
+  submit: async (project: ProjectSubmissionCreate): Promise<ProjectSubmission> => {
     const response = await api.post('/projects/submit', project)
     return response.data
   },

@@ -11,8 +11,7 @@ load_dotenv()
 
 # رابط قاعدة البيانات
 DATABASE_URL = os.getenv(
-    "DATABASE_URL", 
-    "postgresql://postgres:password@localhost:5432/technofest_db"
+    "DATABASE_URL"
 )
 
 # إنشاء محرك قاعدة البيانات
@@ -37,8 +36,8 @@ def get_db():
 def init_db():
     """تهيئة قاعدة البيانات وإنشاء الجداول"""
     from models import (
-        Admin, Team, TeamMember, Individual, 
-        Project, ProjectSubmission, Evaluation, ProgramVersion
+        Admin, Team, TeamMember, Individual,
+        ProjectSubmission, Evaluation, ProgramVersion, EmailLog
     )
     Base.metadata.create_all(bind=engine)
     print("✅ تم إنشاء جميع الجداول بنجاح")

@@ -33,6 +33,7 @@ export default function IndividualRegistration() {
   const {
     register,
     handleSubmit,
+    trigger,
     formState: { errors },
   } = useForm<IndividualFormData>()
 
@@ -207,7 +208,7 @@ export default function IndividualRegistration() {
 
                 {/* Experience Level */}
                 <div>
-                  <label className="block text-white font-medium mb-2">مستوى الخبرة *</label>
+                  <label className="block text-white font-medium mb-2"> مستوى الخبرة في مجالك *</label>
                   <select
                     {...register('experience_level', { required: 'يرجى اختيار مستوى الخبرة' })}
                     className="input-field"
@@ -236,7 +237,12 @@ export default function IndividualRegistration() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setStep(3)}
+                  onClick={async () => {
+                    const isValid = await trigger(['full_name', 'email', 'phone', 'experience_level'])
+                    if (isValid) {
+                      setStep(3)
+                    }
+                  }}
                   className="btn-primary flex items-center gap-2"
                 >
                   التالي

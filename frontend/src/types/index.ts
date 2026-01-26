@@ -86,7 +86,17 @@ export interface Individual {
   created_at?: string
 }
 
-// Project Submission
+// Project Submission Create (using email to find team)
+export interface ProjectSubmissionCreate {
+  member_email: string
+  title: string
+  problem_statement: string
+  technical_description: string
+  scientific_reference: string
+  field: ProjectField
+}
+
+// Project Submission Response
 export interface ProjectSubmission {
   id?: number
   team_id: number
