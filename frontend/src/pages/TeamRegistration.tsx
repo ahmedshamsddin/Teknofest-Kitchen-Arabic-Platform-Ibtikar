@@ -33,6 +33,7 @@ export default function TeamRegistration() {
     register,
     handleSubmit,
     control,
+    trigger,
     formState: { errors },
   } = useForm<TeamFormData>({
     defaultValues: {
@@ -90,6 +91,19 @@ export default function TeamRegistration() {
       setLeaderIndex(0) // Reset to first member
     } else if (leaderIndex > index) {
       setLeaderIndex(leaderIndex - 1) // Shift leader index
+    }
+  }
+
+  const handleNextStep = async () => {
+    // Validate step 2 fields before proceeding
+    const fieldsToValidate: ('team_name' | 'field' | 'initial_idea')[] = ['team_name', 'field']
+    if (hasIdea) {
+      fieldsToValidate.push('initial_idea')
+    }
+
+    const isValid = await trigger(fieldsToValidate)
+    if (isValid) {
+      setStep(3)
     }
   }
 
@@ -248,7 +262,7 @@ export default function TeamRegistration() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setStep(3)}
+                  onClick={handleNextStep}
                   className="btn-primary flex items-center gap-2"
                 >
                   التالي
