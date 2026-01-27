@@ -2,6 +2,7 @@
 خدمة المصادقة - JWT Authentication
 """
 import os
+import hashlib
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
@@ -18,8 +19,8 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 ساعة
 
-# إعدادات كلمة المرور
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# إعدادات كلمة المرور - استخدام sha256_crypt بدلاً من bcrypt لتجنب مشاكل التوافق
+pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
 
 # OAuth2
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/admin/login")

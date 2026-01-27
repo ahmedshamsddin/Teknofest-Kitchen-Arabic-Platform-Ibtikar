@@ -6,8 +6,10 @@ import type {
   ProjectSubmissionCreate,
   Evaluation,
   LoginCredentials,
+  RegisterCredentials,
   AuthToken,
   TopTeam,
+  Admin,
 } from '../types'
 
 const API_BASE_URL = '/api'
@@ -52,6 +54,11 @@ export const authService = {
     const response = await api.post('/admin/login', formData, {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     })
+    return response.data
+  },
+
+  register: async (credentials: RegisterCredentials): Promise<Admin> => {
+    const response = await api.post('/admin/register', credentials)
     return response.data
   },
 

@@ -1,15 +1,17 @@
 """
 مسارات الإداريين - تسجيل الدخول وإدارة النظام
 """
+import os
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List
 from datetime import timedelta
+from dotenv import load_dotenv
 from database import get_db
 from models import (
-    Admin, Team, TeamMember, Individual, ProjectSubmission, 
+    Admin, Team, TeamMember, Individual, ProjectSubmission,
     ProgramVersion, RegistrationType, Evaluation
 )
 from schemas import (
@@ -18,11 +20,15 @@ from schemas import (
     EmailSend, ProgramVersionCreate, ProgramVersionResponse
 )
 from services.auth_service import (
-    verify_password, get_password_hash, create_access_token, 
+    verify_password, get_password_hash, create_access_token,
     get_current_admin, ACCESS_TOKEN_EXPIRE_MINUTES
 )
 from services.email_service import email_service
 from services.pdf_generator import pdf_service
+
+# تحميل متغيرات البيئة
+load_dotenv()
+ADMIN_REGISTRATION_CODE = os.getenv("ADMIN_REGISTRATION_CODE", "")
 
 router = APIRouter(prefix="/api/admin", tags=["الإداريون"])
 
@@ -31,19 +37,26 @@ router = APIRouter(prefix="/api/admin", tags=["الإداريون"])
 
 @router.post("/register", response_model=AdminResponse, status_code=status.HTTP_201_CREATED)
 async def register_admin(admin_data: AdminCreate, db: Session = Depends(get_db)):
-    """تسجيل إداري جديد (للاستخدام الأولي فقط)"""
+    """تسجيل إداري جديد - يتطلب كود التسجيل السري"""
+    # التحقق من كود التسجيل
+    if admin_data.registration_code != ADMIN_REGISTRATION_CODE:
+        raise HTTPException(
+            status_code=403,
+            detail="كود التسجيل غير صحيح"
+        )
+
     # التحقق من عدم وجود إداري بنفس البيانات
     existing = db.query(Admin).filter(
-        (Admin.username == admin_data.username) | 
+        (Admin.username == admin_data.username) |
         (Admin.email == admin_data.email)
     ).first()
-    
+
     if existing:
         raise HTTPException(
             status_code=400,
             detail="اسم المستخدم أو البريد الإلكتروني موجود مسبقاً"
         )
-    
+
     # إنشاء الإداري
     admin = Admin(
         username=admin_data.username,
@@ -52,16 +65,16 @@ async def register_admin(admin_data: AdminCreate, db: Session = Depends(get_db))
         full_name=admin_data.full_name,
         evaluation_weight=admin_data.evaluation_weight
     )
-    
+
     # أول إداري يكون مدير عام
     admin_count = db.query(Admin).count()
     if admin_count == 0:
         admin.is_superadmin = True
-    
+
     db.add(admin)
     db.commit()
     db.refresh(admin)
-    
+
     return admin
 
 

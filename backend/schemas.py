@@ -232,6 +232,7 @@ class AdminCreate(BaseModel):
     password: str = Field(..., min_length=8)
     full_name: str = Field(..., min_length=2, max_length=100)
     evaluation_weight: float = Field(default=10.0, ge=0, le=100)
+    registration_code: str = Field(..., min_length=1)  # كود التسجيل السري
 
 
 class AdminResponse(BaseModel):

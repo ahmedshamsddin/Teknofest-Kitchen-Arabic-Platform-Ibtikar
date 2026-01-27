@@ -152,6 +152,14 @@ export interface LoginCredentials {
   password: string
 }
 
+export interface RegisterCredentials {
+  username: string
+  email: string
+  password: string
+  full_name: string
+  registration_code: string
+}
+
 export interface AuthToken {
   access_token: string
   token_type: string
