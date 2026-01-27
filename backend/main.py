@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from database import init_db
-from routers import students_router, projects_router, admin_router, evaluation_router
+from routers import students_router, projects_router, admin_router, evaluation_router, email_router
 
 # إنشاء التطبيق
 app = FastAPI(
@@ -48,6 +48,7 @@ app.include_router(students_router)
 app.include_router(projects_router)
 app.include_router(admin_router)
 app.include_router(evaluation_router)
+app.include_router(email_router)
 
 # خدمة الملفات الثابتة (الصور والملفات المرفوعة)
 UPLOAD_DIR = "uploads"
@@ -74,7 +75,8 @@ async def root():
             "students": "/api/students",
             "projects": "/api/projects",
             "admin": "/api/admin",
-            "evaluation": "/api/evaluation"
+            "evaluation": "/api/evaluation",
+            "email": "/api/email"
         }
     }
 
