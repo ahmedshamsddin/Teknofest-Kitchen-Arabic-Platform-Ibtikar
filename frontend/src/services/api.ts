@@ -186,12 +186,12 @@ export const projectsService = {
 
 export const evaluationsService = {
   create: async (evaluation: Omit<Evaluation, 'id'>): Promise<Evaluation> => {
-    const response = await api.post('/evaluation/evaluate', evaluation)
+    const response = await api.post('/evaluation/admin', evaluation)
     return response.data
   },
 
   requestAIEvaluation: async (projectId: number): Promise<Evaluation> => {
-    const response = await api.post('/evaluation/ai-evaluate', { project_id: projectId })
+    const response = await api.post('/evaluation/ai', { project_id: projectId })
     return response.data
   },
 
