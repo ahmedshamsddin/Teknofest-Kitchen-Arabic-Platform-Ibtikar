@@ -386,6 +386,7 @@ export default function TeamRegistration() {
                         <input
                           {...register(`members.${index}.phone`, {
                             required: 'رقم الهاتف مطلوب',
+                            minLength: { value: 10, message: 'رقم الهاتف يجب أن يكون 10 أرقام على الأقل' },
                           })}
                           type="tel"
                           className="input-field"
