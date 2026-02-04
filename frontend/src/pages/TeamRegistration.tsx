@@ -167,14 +167,22 @@ export default function TeamRegistration() {
       setMembershipStatus(prev => ({ ...prev, [index]: null }))
       setMemberData(prev => ({ ...prev, [index]: null }))
       setMemberGenders(prev => ({ ...prev, [index]: null }))
+
+      setValue(`members.${index}.full_name`, '')
+      setValue(`members.${index}.email`, '')
+      setValue(`members.${index}.phone`, '')
       return
     }
 
-    if (membershipNumber.length < 7) {
+    if (membershipNumber.length !== 7) {
       setMembershipStatus(prev => ({ ...prev, [index]: 'invalid' }))
       setVerifyingMembership(prev => ({ ...prev, [index]: false }))
       setMemberData(prev => ({ ...prev, [index]: null }))
       setMemberGenders(prev => ({ ...prev, [index]: null }))
+
+      setValue(`members.${index}.full_name`, '')
+      setValue(`members.${index}.email`, '')
+      setValue(`members.${index}.phone`, '')
       return
     }
 
@@ -208,6 +216,10 @@ export default function TeamRegistration() {
       setMembershipStatus(prev => ({ ...prev, [index]: 'invalid' }))
       setMemberData(prev => ({ ...prev, [index]: null }))
       setMemberGenders(prev => ({ ...prev, [index]: null }))
+
+      setValue(`members.${index}.full_name`, '')
+      setValue(`members.${index}.email`, '')
+      setValue(`members.${index}.phone`, '')
     } finally {
       setVerifyingMembership(prev => ({ ...prev, [index]: false }))
     }
