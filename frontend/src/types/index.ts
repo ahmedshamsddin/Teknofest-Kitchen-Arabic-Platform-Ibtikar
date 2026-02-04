@@ -77,6 +77,7 @@ export interface Team {
 export interface Individual {
   id?: number
   registration_type: RegistrationType
+  membership_number: string
   full_name: string
   email: string
   phone: string

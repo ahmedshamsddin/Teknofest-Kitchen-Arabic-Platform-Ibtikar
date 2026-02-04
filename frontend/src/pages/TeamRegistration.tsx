@@ -93,6 +93,7 @@ export default function TeamRegistration() {
     try {
       // Transform members to ensure is_leader is properly set
       const membersWithLeader = data.members.map((member, index) => ({
+        membership_number: member.membership_number,
         full_name: member.full_name,
         email: member.email,
         phone: member.phone,
