@@ -41,7 +41,8 @@ export default function TeamRegistration() {
   const [membershipStatus, setMembershipStatus] = useState<{[key: number]: 'valid' | 'invalid' | null}>({})
   const [memberData, setMemberData] = useState<{[key: number]: {full_name: string, email: string, phone: string} | null}>({})
   const [memberGenders, setMemberGenders] = useState<{[key: number]: Gender | null}>({})
-  
+  const membershipRequestIds = useRef<{[key: number]: number}>({})  // Add this line
+
   const {
     register,
     handleSubmit,
@@ -65,8 +66,24 @@ export default function TeamRegistration() {
   })
 
   const onSubmit = async (data: TeamFormData) => {
+    if (isSubmitting) return
     const { isValid, teamGender } = validateTeamGender()
-    
+
+    const allMembersValid = fields.every((_, index) => 
+      membershipStatus[index] === 'valid'
+    )
+  
+    const invalidMemberIndices = fields
+    .map((_, index) => ({ index, valid: membershipStatus[index] === 'valid' }))
+    .filter(m => !m.valid)
+    .map(m => m.index + 1)
+
+    if (!allMembersValid) {
+      toast.error(`يرجى التحقق من رقم العضوية للعضو رقم: ${invalidMemberIndices.join(', ')}`)
+      return
+    }
+
+
     if (!isValid || !teamGender) {
       toast.error('جميع أعضاء الفريق يجب أن يكونوا من نفس الجنس')
       return
@@ -109,23 +126,28 @@ export default function TeamRegistration() {
   const handleRemoveMember = (index: number) => {
     remove(index)
     
-    // Clear member data and status for this index
-    setMemberData(prev => {
-      const newData = { ...prev }
-      delete newData[index]
-      return newData
-    })
-    setMembershipStatus(prev => {
-      const newStatus = { ...prev }
-      delete newStatus[index]
-      return newStatus
-    })
-    setMemberGenders(prev => {
-      const newGenders = { ...prev }
-      delete newGenders[index]
-      return newGenders
-    })
-    // Adjust leader index if needed
+    // Reindex all state objects
+    const reindexState = (state: any) => {
+      const newState: any = {}
+      Object.keys(state).forEach(key => {
+        const oldIndex = parseInt(key)
+        if (oldIndex < index) {
+          newState[oldIndex] = state[oldIndex]
+        } else if (oldIndex > index) {
+          newState[oldIndex - 1] = state[oldIndex]
+        }
+      })
+      return newState
+    }
+    
+    setMemberData(prev => reindexState(prev))
+    setMembershipStatus(prev => reindexState(prev))
+    setMemberGenders(prev => reindexState(prev))
+    setVerifyingMembership(prev => reindexState(prev))
+    
+    membershipRequestIds.current = reindexState(membershipRequestIds.current)
+
+    // Adjust leader index
     if (leaderIndex === index) {
       setLeaderIndex(0)
     } else if (leaderIndex > index) {
@@ -134,9 +156,10 @@ export default function TeamRegistration() {
   }
 
   const validateTeamGender = (): { isValid: boolean; teamGender: Gender | null } => {
+    const totalMembers = fields.length
     const genders = Object.values(memberGenders).filter(g => g !== null) as Gender[]
     
-    if (genders.length === 0) {
+    if (genders.length !== totalMembers) {
       return { isValid: false, teamGender: null }
     }
     
@@ -186,19 +209,26 @@ export default function TeamRegistration() {
       return
     }
 
+    const requestId = Date.now()
+    membershipRequestIds.current[index] = requestId
+
     setVerifyingMembership(prev => ({ ...prev, [index]: true }))
     
     try {
       const memberResponse = await iForgotService.verifyMembershipNumber(membershipNumber)
       
+      if (membershipRequestIds.current[index] !== requestId) {
+        return
+      }
+
       if (memberResponse.success) {
         setMembershipStatus(prev => ({ ...prev, [index]: 'valid' }))
         setMemberData(prev => ({ 
           ...prev, 
           [index]: {
-            full_name: memberResponse.member.ar_name,
-            email: memberResponse.member.email,
-            phone: memberResponse.member.phone
+            full_name: memberResponse.member.ar_name || '',
+            email: memberResponse.member.email || '',
+            phone: memberResponse.member.phone || ''
           }
         }))
 
@@ -211,8 +241,16 @@ export default function TeamRegistration() {
         setMembershipStatus(prev => ({ ...prev, [index]: 'invalid' }))
         setMemberData(prev => ({ ...prev, [index]: null }))
         setMemberGenders(prev => ({ ...prev, [index]: null }))
+
+        setValue(`members.${index}.full_name`, '')
+        setValue(`members.${index}.email`, '')
+        setValue(`members.${index}.phone`, '')
       }
     } catch (error) {
+      if (membershipRequestIds.current[index] !== requestId) {
+        return
+      }
+
       setMembershipStatus(prev => ({ ...prev, [index]: 'invalid' }))
       setMemberData(prev => ({ ...prev, [index]: null }))
       setMemberGenders(prev => ({ ...prev, [index]: null }))
@@ -221,7 +259,9 @@ export default function TeamRegistration() {
       setValue(`members.${index}.email`, '')
       setValue(`members.${index}.phone`, '')
     } finally {
-      setVerifyingMembership(prev => ({ ...prev, [index]: false }))
+      if (membershipRequestIds.current[index] === requestId) {
+        setVerifyingMembership(prev => ({ ...prev, [index]: false }))
+      }    
     }
   }
 
@@ -229,6 +269,14 @@ export default function TeamRegistration() {
   const useDebounce = (callback: Function, delay: number) => {
     const timeoutRef = useRef<number>()
     
+    useEffect(() => {
+      return () => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current)
+        }
+      }
+    }, [])    
+
     return (...args: any[]) => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
       timeoutRef.current = setTimeout(() => callback(...args), delay)
@@ -242,10 +290,17 @@ export default function TeamRegistration() {
     Object.entries(memberData).forEach(([indexStr, data]) => {
       const index = parseInt(indexStr)
       if (data) {
-        setValue(`members.${index}.full_name`, data.full_name)
-        setValue(`members.${index}.email`, data.email)
-        setValue(`members.${index}.phone`, data.phone)
-      }
+        // Only set value if it's not empty
+        if (data.full_name) {
+          setValue(`members.${index}.full_name`, data.full_name)
+        }
+        if (data.email) {
+          setValue(`members.${index}.email`, data.email)
+        }
+        if (data.phone) {
+          setValue(`members.${index}.phone`, data.phone)
+        }
+      } 
     })
   }, [memberData, setValue])
 
@@ -506,7 +561,8 @@ export default function TeamRegistration() {
                           <input
                             {...register(`members.${index}.membership_number`, {
                               required: 'رقم العضوية مطلوب',
-                              minLength: { value: 7, message: 'رقم العضوية يجب أن يكون 7 أرقام ' },
+                              minLength: { value: 7, message: 'رقم العضوية يجب أن يكون 7 أرقام' },
+                              maxLength: { value: 7, message: 'رقم العضوية يجب أن يكون 7 أرقام' },
                             })}
                             type="text"
                             className="input-field"
@@ -555,7 +611,7 @@ export default function TeamRegistration() {
                           type="text"
                           className="input-field disabled:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
                           placeholder="الاسم الكامل"
-                          disabled={!!memberData[index]}
+                          disabled={!!(memberData[index]?.full_name)}
                         />
                         {errors.members?.[index]?.full_name && (
                           <p className="text-red-400 text-xs mt-1">
@@ -577,7 +633,7 @@ export default function TeamRegistration() {
                           className="input-field disabled:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
                           placeholder="البريد الإلكتروني"
                           dir="ltr"
-                          disabled={!!memberData[index]}
+                          disabled={!!(memberData[index]?.email)}
                         />
                         {errors.members?.[index]?.email && (
                           <p className="text-red-400 text-xs mt-1">
@@ -596,7 +652,7 @@ export default function TeamRegistration() {
                           className="input-field disabled:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
                           placeholder="رقم الهاتف"
                           dir="ltr"
-                          disabled={!!memberData[index]}
+                          disabled={!!(memberData[index]?.phone)}
                         />
                         {errors.members?.[index]?.phone && (
                           <p className="text-red-400 text-xs mt-1">
@@ -631,9 +687,13 @@ export default function TeamRegistration() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting || !validateTeamGender().isValid}
+                  disabled={  
+                    isSubmitting || 
+                    !validateTeamGender().isValid ||
+                    !fields.every((_, index) => membershipStatus[index] === 'valid')
+                  }
                   className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                  >
                   {isSubmitting ? (
                     <>
                       <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
