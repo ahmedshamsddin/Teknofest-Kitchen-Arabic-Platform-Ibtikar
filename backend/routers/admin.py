@@ -245,6 +245,7 @@ async def assign_individuals_to_team(
         member = TeamMember(
             team_id=team.id,
             full_name=ind.full_name,
+            membership_number=ind.membership_number,
             email=ind.email,
             phone=ind.phone,
             is_leader=(i == 0)  # أول عضو يكون القائد

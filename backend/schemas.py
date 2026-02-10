@@ -46,6 +46,7 @@ class TeamMemberCreate(BaseModel):
     full_name: str = Field(..., min_length=2, max_length=100)
     email: EmailStr
     phone: str = Field(..., min_length=10, max_length=20)
+    membership_number: Optional[str] = Field(None)  # رقم العضوية إن وجد
     is_leader: bool = False
 
 
@@ -112,6 +113,7 @@ class IndividualCreate(BaseModel):
     """إنشاء فرد - سيناريو 2 و 3"""
     registration_type: RegistrationTypeEnum
     full_name: str = Field(..., min_length=2, max_length=100)
+    membership_number: Optional[str] = Field(None)  # رقم العضوية إن وجد
     email: EmailStr
     phone: str = Field(..., min_length=10, max_length=20)
     technical_skills: str = Field(..., min_length=10)
@@ -132,6 +134,7 @@ class IndividualResponse(BaseModel):
     """استجابة الفرد"""
     id: int
     registration_type: RegistrationTypeEnum
+    membership_number: Optional[str]
     full_name: str
     email: str
     phone: str
@@ -291,7 +294,7 @@ class AssignIndividualsToTeam(BaseModel):
     individual_ids: List[int] = Field(..., min_items=3, max_items=6)
     team_name: str = Field(..., min_length=2, max_length=100)
     field: ProjectFieldEnum
-    gender: GenderEnum
+    gender: Optional[GenderEnum] = None
 
 
 # ================== مخططات أفضل الفرق ==================

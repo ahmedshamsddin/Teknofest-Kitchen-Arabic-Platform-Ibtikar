@@ -15,6 +15,7 @@ from schemas import (
     AssignIndividualsToTeam
 )
 from services.email_service import email_service
+from services.iforgot_service import iForgotService
 
 router = APIRouter(prefix="/api/students", tags=["المشاركون"])
 
@@ -90,6 +91,7 @@ async def register_team(team_data: TeamCreate, db: Session = Depends(get_db)):
             full_name=member_data.full_name,
             email=member_data.email,
             phone=member_data.phone,
+            membership_number=member_data.membership_number,
             is_leader=member_data.is_leader
         )
         db.add(member)
@@ -163,6 +165,7 @@ async def register_individual(
     individual = Individual(
         registration_type=RegistrationType(individual_data.registration_type.value),
         full_name=individual_data.full_name,
+        membership_number=individual_data.membership_number,
         email=individual_data.email,
         phone=individual_data.phone,
         technical_skills=individual_data.technical_skills,
@@ -338,7 +341,7 @@ async def assign_individuals_to_team(
         raise HTTPException(status_code=400, detail="لا يمكن إنشاء فريق من أفراد بجنسين مختلفين")
 
     team_gender = genders.pop()
-
+    print(team_gender)
     # الحصول على نسخة البرنامج
     version = get_active_program_version(db)
 
@@ -359,6 +362,7 @@ async def assign_individuals_to_team(
         member = TeamMember(
             team_id=team.id,
             full_name=ind.full_name,
+            membership_number=ind.membership_number,
             email=ind.email,
             phone=ind.phone,
             is_leader=(i == 0)
@@ -433,6 +437,7 @@ async def add_individuals_to_existing_team(
         member = TeamMember(
             team_id=team.id,
             full_name=ind.full_name,
+            membership_number=ind.membership_number,
             email=ind.email,
             phone=ind.phone,
             is_leader=False
@@ -568,6 +573,19 @@ async def send_telegram_link_to_team(
 
     return results
 
+# ==================== iforgot service ====================
+@router.get("/verify-membership-number/{membership_number}")
+def verify_membership_number(membership_number: str):
+    try:
+        member_data = iForgotService.get_by_membership_number(membership_number)
+        if not member_data['success']:
+            return {"message": "رقم العضوية غير موجود"}
+        return member_data
+        
+    except Exception as e:
+        return {
+            "message": "فشل التحقق من رقم العضوية: " + str(e)
+        }
 
 def create_telegram_email_template(recipient_name: str, telegram_link: str) -> str:
     """إنشاء قالب البريد لدعوة تلغرام"""
