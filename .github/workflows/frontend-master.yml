@@ -12,6 +12,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment: master
     defaults:
       run:
         working-directory: ./frontend
@@ -34,5 +35,7 @@ jobs:
         run: npm run build
 
       - name: Deploy to production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           wrangler deploy
