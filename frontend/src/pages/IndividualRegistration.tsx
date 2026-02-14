@@ -127,16 +127,16 @@ export default function IndividualRegistration() {
   }
 
   const useDebounce = (callback: Function, delay: number) => {
-    const timeoutRef = useRef<number>()
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     useEffect(() => {
       return () => {
-        if (timeoutRef.current) clearTimeout(timeoutRef.current)
+        if (timeoutRef.current !== null) clearTimeout(timeoutRef.current)
       }
     }, [])
 
     return (...args: any[]) => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      if (timeoutRef.current !== null) clearTimeout(timeoutRef.current)
       timeoutRef.current = setTimeout(() => callback(...args), delay)
     }
   }
